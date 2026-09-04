@@ -11,7 +11,7 @@ A safe, read-only Linux health auditor that produces a compact Markdown or JSON 
 - Count of listening TCP/UDP sockets without exposing endpoint details
 - Host platform and uptime metadata
 
-Thresholds are deliberately simple and visible in the source. The tool does not restart services, change firewall rules, delete files, or claim that a warning has one automatic fix.
+Thresholds are deliberately simple and visible in the source. Disk usage is reported the way `df` reports it — `used / (used + available)`, excluding root-reserved blocks — so the number matches what an operator sees in their terminal. The tool does not restart services, change firewall rules, delete files, or claim that a warning has one automatic fix.
 
 ## Quickstart
 
@@ -37,9 +37,9 @@ Real output, with the hostname replaced:
 
 | Check | Status | Summary |
 |---|---|---|
-| `memory` | ✅ ok | 51.8% available (3.0 GiB of 5.8 GiB) |
-| `load` | ✅ ok | load 0.70/0.61/0.85 across 4 CPU(s) |
-| `disk:/` | ✅ ok | 72.3% used, 30.5 GiB free |
+| `memory` | ✅ ok | 50.7% available (2.9 GiB of 5.8 GiB) |
+| `load` | ✅ ok | load 0.34/0.30/0.52 across 4 CPU(s) |
+| `disk:/` | ✅ ok | 76.1% used, 30.5 GiB free |
 | `failed-units` | ✅ ok | 0 failed systemd unit(s) |
 | `listening-sockets` | ✅ ok | 27 listening TCP/UDP socket(s) |
 ```

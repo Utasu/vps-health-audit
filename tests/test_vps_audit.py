@@ -40,6 +40,23 @@ class VpsAuditTests(unittest.TestCase):
         opted_in = vps_audit.failed_units_check(show_units=True)
         self.assertIn("units", opted_in.details)
 
+    def test_overall_status_is_deterministic_when_a_check_is_unavailable(self):
+        # A real warning must outrank a check that could not run, regardless of the
+        # order the checks happen to appear in.
+        warning = vps_audit.Check("a", "warning", "", {})
+        unavailable = vps_audit.Check("b", "unavailable", "", {})
+        for checks in ([warning, unavailable], [unavailable, warning]):
+            worst = max(checks, key=lambda check: vps_audit.STATUS_ORDER[check.status])
+            self.assertEqual(worst.status, "warning")
+        self.assertEqual(len(set(vps_audit.STATUS_ORDER.values())), len(vps_audit.STATUS_ORDER))
+
+    def test_disk_percentage_matches_df(self):
+        # 10 GiB total, 1 GiB reserved: df would report 8/(8+1) = 88.9% used.
+        gib = 1024 ** 3
+        check = vps_audit.disk_check(Path("/"), 10 * gib, 8 * gib, 1 * gib)
+        self.assertIn("88.9% used", check.summary)
+        self.assertEqual(check.status, "warning")
+
 
 if __name__ == "__main__":
     unittest.main()

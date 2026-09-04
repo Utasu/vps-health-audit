@@ -18,7 +18,10 @@ from typing import Any
 
 
 UTC = dt.timezone.utc
-STATUS_ORDER = {"ok": 0, "warning": 1, "critical": 2, "unavailable": 1}
+# Distinct weights only: with a tie, max() returns whichever check happened to run
+# first, so the same machine state could report "warning" once and "unavailable" the
+# next time. A check that could not run ranks below a real warning.
+STATUS_ORDER = {"ok": 0, "unavailable": 1, "warning": 2, "critical": 3}
 
 
 def now_iso() -> str:
@@ -57,7 +60,11 @@ class Check:
 
 
 def disk_check(path: Path, total: int, used: int, free: int) -> Check:
-    percent = (used / total * 100) if total else 100.0
+    # Match df: its Use% is used/(used+available) and excludes the root-reserved
+    # blocks, so used/total would read a few points lower than the number the
+    # operator sees in their terminal.
+    usable = used + free
+    percent = (used / usable * 100) if usable else 100.0
     status = "critical" if percent >= 92 else "warning" if percent >= 80 else "ok"
     return Check(
         name=f"disk:{path}",
