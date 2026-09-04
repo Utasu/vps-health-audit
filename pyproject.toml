@@ -1,0 +1,8 @@
+[project]
+name = "vps-health-audit"
+version = "1.0.0"
+description = "Generate a read-only Linux VPS health report"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
