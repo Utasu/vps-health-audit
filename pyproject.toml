@@ -2,6 +2,7 @@
 name = "vps-health-audit"
 version = "1.0.0"
 description = "Generate a read-only Linux VPS health report"
+license = { text = "MIT" }
 requires-python = ">=3.11"
 
 [tool.ruff]

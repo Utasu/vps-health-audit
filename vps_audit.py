@@ -114,7 +114,13 @@ def run_lines(command: list[str], timeout: int = 5) -> tuple[list[str], str]:
     return lines, error
 
 
-def failed_units_check() -> Check:
+def failed_units_check(show_units: bool = False) -> Check:
+    """Report failed units, by count only unless the operator opts in.
+
+    Unit names describe what the host actually runs, which is the same class of
+    infrastructure detail the listening-socket check deliberately withholds. Reports
+    get pasted into tickets and chats, so the safe default is a count.
+    """
     lines, error = run_lines(
         ["systemctl", "list-units", "--failed", "--no-legend", "--no-pager", "--plain"]
     )
@@ -123,7 +129,12 @@ def failed_units_check() -> Check:
     units = [line.split()[0] for line in lines if line.split()]
     status = "warning" if units else "ok"
     summary = f"{len(units)} failed systemd unit(s)"
-    return Check("failed-units", status, summary, {"count": len(units), "units": units[:20]})
+    details: dict[str, Any] = {"count": len(units)}
+    if show_units:
+        details["units"] = units[:20]
+    else:
+        details["redacted"] = "unit names hidden; pass --show-units to include them"
+    return Check("failed-units", status, summary, details)
 
 
 def listening_sockets_check() -> Check:
@@ -139,7 +150,7 @@ def listening_sockets_check() -> Check:
     )
 
 
-def collect(paths: list[Path]) -> dict[str, Any]:
+def collect(paths: list[Path], show_units: bool = False) -> dict[str, Any]:
     checks: list[Check] = []
     try:
         meminfo = Path("/proc/meminfo").read_text(encoding="utf-8")
@@ -159,7 +170,7 @@ def collect(paths: list[Path]) -> dict[str, Any]:
         except OSError as error:
             checks.append(Check(f"disk:{path}", "unavailable", type(error).__name__, {}))
 
-    checks.extend([failed_units_check(), listening_sockets_check()])
+    checks.extend([failed_units_check(show_units), listening_sockets_check()])
     overall = max(checks, key=lambda check: STATUS_ORDER[check.status]).status if checks else "unavailable"
     try:
         uptime_seconds = float(Path("/proc/uptime").read_text().split()[0])
@@ -211,9 +222,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--path", action="append", type=Path, dest="paths", default=[])
     parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
+    parser.add_argument(
+        "--show-units",
+        action="store_true",
+        help="include failed unit names (they reveal what this host runs)",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
-    report = collect(args.paths or [Path("/")])
+    report = collect(args.paths or [Path("/")], show_units=args.show_units)
     rendered = (
         json.dumps(report, ensure_ascii=False, indent=2) + "\n"
         if args.format == "json"

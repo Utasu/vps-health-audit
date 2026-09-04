@@ -33,6 +33,13 @@ class VpsAuditTests(unittest.TestCase):
         self.assertIn("VPS Health Audit", rendered)
         self.assertIn("50% available", rendered)
 
+    def test_failed_units_are_redacted_by_default(self):
+        default = vps_audit.failed_units_check()
+        self.assertNotIn("units", default.details)
+        self.assertIn("count", default.details)
+        opted_in = vps_audit.failed_units_check(show_units=True)
+        self.assertIn("units", opted_in.details)
+
 
 if __name__ == "__main__":
     unittest.main()
