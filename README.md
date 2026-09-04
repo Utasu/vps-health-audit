@@ -1,5 +1,7 @@
 # VPS Health Audit
 
+[![tests](https://github.com/Utasu/vps-health-audit/actions/workflows/tests.yml/badge.svg)](https://github.com/Utasu/vps-health-audit/actions/workflows/tests.yml)
+
 A safe, read-only Linux health auditor that produces a compact Markdown or JSON report without installing an agent or changing the server.
 
 ## Checks
